@@ -30,10 +30,11 @@ public class FormMap extends HashMap<String, FormMap.Field>
      * @param key       the HashMap key
      * @param valueType the type of the value (e.g. firstname, date, datetime...)
      * @param field     the field
+     * @param <T>       a class extending {@link Control}
      */
-    public void add (@NotNull String key, @NotNull FieldValueType valueType, @NotNull Control field)
+    public <T extends Control> void add (@NotNull String key, @NotNull FieldValueType valueType, @NotNull T field)
     {
-        Field formFieldObject = new Field(field, valueType);
+        Field<T> formFieldObject = new Field<>(field, valueType);
         super.put(key, formFieldObject);
 
         if (field instanceof TextInputControl)
@@ -51,8 +52,9 @@ public class FormMap extends HashMap<String, FormMap.Field>
      * @param valueType  the type of the value (e.g. firstname, date, datetime...)
      * @param field      the field
      * @param isRequired true if the field should not be empty, false otherwise
+     * @param <T>        a class extending {@link Control}
      */
-    public void add (@NotNull String key, @NotNull FieldValueType valueType, @NotNull Control field, boolean isRequired)
+    public <T extends Control> void add (@NotNull String key, @NotNull FieldValueType valueType, @NotNull T field, boolean isRequired)
     {
         add(key, valueType, field);
         get(key).setRequired(isRequired);
@@ -127,11 +129,13 @@ public class FormMap extends HashMap<String, FormMap.Field>
 
     /**
      * Inner class representing a field of a form
+     *
+     * @param <T> a class extending {@link Control}
      */
-    public class Field
+    public class Field<T extends Control>
     {
         /** The field */
-        private Control field;
+        private T field;
 
         /** The type of the value (e.g. Name, Date, Datetime...) */
         private FieldValueType valueTypes = FieldValueType.UNDEFINED;
@@ -156,7 +160,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
          * @param field     the field extending {@link Control}
          * @param valueType the type of the value (e.g. Name, Date, Datetime...)
          */
-        public Field (Control field, FieldValueType valueType)
+        public Field (T field, FieldValueType valueType)
         {
             this();
             this.field = field;
@@ -194,17 +198,17 @@ public class FormMap extends HashMap<String, FormMap.Field>
          *
          * @param field the field extending {@link Control}
          */
-        public Field (Control field)
+        public Field (T field)
         {
             this.field = field;
         }
 
         /**
-         * Get the field as {@link Control} instance
+         * Get the field as {@link Control} child instance
          *
-         * @return the field as {@link Control} instance
+         * @return the field as {@link Control} child instance
          */
-        public Control getField ()
+        public T getField ()
         {
             return field;
         }
@@ -214,7 +218,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
          *
          * @param field the field
          */
-        public void setField (@NotNull Control field)
+        public void setField (@NotNull T field)
         {
             this.field = field;
         }
