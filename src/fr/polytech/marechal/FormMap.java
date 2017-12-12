@@ -7,6 +7,7 @@ import fr.polytech.marechal.validator.InvalidationReason;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.web.HTMLEditor;
 
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
         else if (field instanceof ComboBoxBase) {
             ((ComboBoxBase) field).valueProperty().addListener((observable, oldValue, newValue) -> FormValidator.validateField(formFieldObject));
         }
+        prepareEnterKeyEvent();
     }
 
     /**
@@ -81,6 +83,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
     {
         this.submitButton = submitButton;
         updateSubmitButtonState();
+        prepareEnterKeyEvent();
     }
 
 
@@ -188,7 +191,25 @@ public class FormMap extends HashMap<String, FormMap.Field>
     }
 
     /**
+     * Prepare submit event on enter key typed
+     */
+    private void prepareEnterKeyEvent ()
+    {
+        if (submitButton != null) {
+            for (Entry<String, Field> entry : entrySet()) {
+                Control control = entry.getValue().getField();
+                control.setOnKeyPressed(event -> {
+                    if (event.getCode() == KeyCode.ENTER) {
+                        submitButton.fire();
+                    }
+                });
+            }
+        }
+    }
+
+    /**
      * Checks if the map contains a set of keys
+     *
      * @param keys the keys that the map should contains
      * @return true if the map contains all the keys, false otherwise
      */
@@ -199,6 +220,8 @@ public class FormMap extends HashMap<String, FormMap.Field>
                 return false;
             }
         }
+
+        return true;
     }
 
 
