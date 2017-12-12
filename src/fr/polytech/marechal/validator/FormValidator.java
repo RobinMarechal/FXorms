@@ -1,9 +1,10 @@
-package fr.polytech.marecal.validator;
+package fr.polytech.marechal.validator;
 
 import com.sun.istack.internal.NotNull;
-import fr.polytech.marecal.FieldTypes;
-import fr.polytech.marecal.FieldValueType;
-import fr.polytech.marecal.FormMap;
+import fr.polytech.marechal.FieldTypes;
+import fr.polytech.marechal.FieldValueType;
+import fr.polytech.marechal.FormMap;
+import javafx.scene.control.ComboBoxBase;
 import javafx.scene.control.Control;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.web.HTMLEditor;
@@ -27,6 +28,7 @@ public class FormValidator
 
     /**
      * Get the invalidation messages map
+     *
      * @return the invalidation messages map
      */
     public static InvalidationReasonMessageMap getInvalidationReasonMessageMap ()
@@ -74,10 +76,8 @@ public class FormValidator
     {
         boolean result = true;
 
-        for (FormMap.Entry<String, FormMap.Field> entry : form.entrySet())
-        {
-            if (!validateField(entry.getValue()))
-            {
+        for (FormMap.Entry<String, FormMap.Field> entry : form.entrySet()) {
+            if (!validateField(entry.getValue())) {
                 result = false;
             }
         }
@@ -98,56 +98,60 @@ public class FormValidator
         final Control        control    = formField.getField();
         final FieldValueType valueTypes = formField.getValueTypes();
 
-        if (control instanceof TextInputControl || control instanceof HTMLEditor)
-        {
-            try
-            {
-                formField.getInvalidationReasonList().remove(InvalidationReason.UNKNOWN);
-
-                String content;
-
-                if (control instanceof TextInputControl)
-                {
-                    content = ((TextInputControl) control).getText();
-                }
-                else
-                {
-                    content = ((HTMLEditor) control).getHtmlText();
-                }
-
-                if(content.isEmpty() && formField.isRequired())
-                {
-                    formField.unValidate();
-                    formField.addInvalidationReason(InvalidationReason.REQUIRED_FIELD);
-                    return false;
-                }
-                else
-                {
-                    formField.validate();
-                    formField.removeInvalidationReason(InvalidationReason.REQUIRED_FIELD);
-                }
-
-                if (content.matches(valueTypes.getRegexp()))
-                {
-                    formField.validate();
-                    formField.removeInvalidationReason(InvalidationReason.INCORRECT_VALUE);
-                    return true;
-                }
-                else
-                {
-                    formField.unValidate();
-                    formField.addInvalidationReason(InvalidationReason.INCORRECT_VALUE);
-                    return false;
-                }
-            }
-            catch (ClassCastException e)
-            {
+        if (control instanceof ComboBoxBase) {
+            ComboBoxBase comboBox = (ComboBoxBase) control;
+            if (formField.isRequired() && comboBox.getValue() == null) {
+                formField.addInvalidationReason(InvalidationReason.REQUIRED_FIELD);
                 formField.unValidate();
-                formField.addInvalidationReason(InvalidationReason.UNKNOWN);
+                return false;
+            }
+
+            formField.removeInvalidationReason(InvalidationReason.REQUIRED_FIELD);
+            formField.validate();
+            return true;
+        }
+
+        if (!(control instanceof TextInputControl) && !(control instanceof HTMLEditor)) {
+            return true;
+        }
+
+        try {
+            formField.getInvalidationReasonList().remove(InvalidationReason.UNKNOWN);
+
+            String content;
+
+            if (control instanceof TextInputControl) {
+                content = ((TextInputControl) control).getText();
+            }
+            else {
+                content = ((HTMLEditor) control).getHtmlText();
+            }
+
+            if (content.isEmpty() && formField.isRequired()) {
+                formField.unValidate();
+                formField.addInvalidationReason(InvalidationReason.REQUIRED_FIELD);
+                return false;
+            }
+            else {
+                formField.validate();
+                formField.removeInvalidationReason(InvalidationReason.REQUIRED_FIELD);
+            }
+
+            if (content.matches(valueTypes.getRegexp())) {
+                formField.validate();
+                formField.removeInvalidationReason(InvalidationReason.INCORRECT_VALUE);
+                return true;
+            }
+            else {
+                formField.unValidate();
+                formField.addInvalidationReason(InvalidationReason.INCORRECT_VALUE);
                 return false;
             }
         }
-
-        return true;
+        catch (ClassCastException e) {
+            formField.unValidate();
+            formField.addInvalidationReason(InvalidationReason.UNKNOWN);
+            return false;
+        }
     }
 }

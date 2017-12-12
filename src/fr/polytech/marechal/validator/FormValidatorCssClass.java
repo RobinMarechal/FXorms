@@ -1,4 +1,4 @@
-package fr.polytech.marecal.validator;
+package fr.polytech.marechal.validator;
 
 /**
  * Created by Robin on 17/05/2017.<br>

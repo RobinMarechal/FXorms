@@ -1,7 +1,7 @@
-package fr.polytech.marecal;
+package fr.polytech.marechal;
 
 import com.sun.istack.internal.NotNull;
-import fr.polytech.marecal.validator.FormValidator;
+import fr.polytech.marechal.validator.FormValidator;
 
 /**
  * Created by Robin on 23/05/2017. <br>

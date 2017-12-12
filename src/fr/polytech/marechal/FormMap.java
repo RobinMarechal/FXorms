@@ -1,9 +1,11 @@
-package fr.polytech.marecal;
+package fr.polytech.marechal;
 
 import com.sun.istack.internal.NotNull;
-import fr.polytech.marecal.validator.FormValidator;
-import fr.polytech.marecal.validator.FormValidatorCssClass;
-import fr.polytech.marecal.validator.InvalidationReason;
+import fr.polytech.marechal.validator.FormValidator;
+import fr.polytech.marechal.validator.FormValidatorCssClass;
+import fr.polytech.marechal.validator.InvalidationReason;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.control.*;
 import javafx.scene.web.HTMLEditor;
 
@@ -37,10 +39,11 @@ public class FormMap extends HashMap<String, FormMap.Field>
         Field<T> formFieldObject = new Field<>(field, valueType);
         super.put(key, formFieldObject);
 
-        if (field instanceof TextInputControl)
-        {
-            ((TextInputControl) field).textProperty()
-                                      .addListener((obs, oldV, newV) -> FormValidator.validateField(formFieldObject));
+        if (field instanceof TextInputControl) {
+            ((TextInputControl) field).textProperty().addListener((obs, oldV, newV) -> FormValidator.validateField(formFieldObject));
+        }
+        else if (field instanceof ComboBoxBase) {
+            ((ComboBoxBase) field).valueProperty().addListener((observable, oldValue, newValue) -> FormValidator.validateField(formFieldObject));
         }
     }
 
@@ -54,10 +57,17 @@ public class FormMap extends HashMap<String, FormMap.Field>
      * @param isRequired true if the field should not be empty, false otherwise
      * @param <T>        a class extending {@link Control}
      */
+
     public <T extends Control> void add (@NotNull String key, @NotNull FieldValueType valueType, @NotNull T field, boolean isRequired)
     {
         add(key, valueType, field);
         get(key).setRequired(isRequired);
+
+        if (isRequired) {
+            nbOfUnvalidatedFields++;
+        }
+
+        updateSubmitButtonState();
     }
 
     /**
@@ -70,6 +80,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
     public void setSubmitButton (@NotNull Button submitButton)
     {
         this.submitButton = submitButton;
+        updateSubmitButtonState();
     }
 
 
@@ -78,8 +89,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
      */
     private void updateSubmitButtonState ()
     {
-        if (submitButton != null)
-        {
+        if (submitButton != null) {
             submitButton.setDisable(nbOfUnvalidatedFields != 0);
         }
     }
@@ -99,33 +109,87 @@ public class FormMap extends HashMap<String, FormMap.Field>
      */
     public void clearAll ()
     {
-        forEach((s, field) ->
-        {
+        forEach((s, field) -> {
             Control control = field.getField();
 
-            if (control instanceof TextInputControl)
-            {
+            if (control instanceof TextInputControl) {
                 ((TextInputControl) control).clear();
             }
-            else if (control instanceof HTMLEditor)
-            {
+            else if (control instanceof HTMLEditor) {
                 ((HTMLEditor) control).setHtmlText("");
             }
-            else if (control instanceof ToggleButton)
-            {
+            else if (control instanceof ToggleButton) {
                 ((ToggleButton) control).setSelected(false);
             }
-            else if (control instanceof CheckBox)
-            {
+            else if (control instanceof CheckBox) {
                 ((CheckBox) control).setSelected(false);
             }
-            else if (control instanceof ComboBox)
-            {
-                ((ComboBox<Object>) control).getSelectionModel()
-                                            .clearSelection();
+            else if (control instanceof ComboBox) {
+                ((ComboBox<Object>) control).getSelectionModel().clearSelection();
             }
         });
     }
+
+    /**
+     * Define the action to trigger when the form is submitted
+     *
+     * @param eventHandler the event handler
+     */
+    public void setOnSubmit (EventHandler<ActionEvent> eventHandler)
+    {
+        submitButton.setOnAction(eventHandler);
+    }
+
+    /**
+     * Console debugging String
+     * @return the debugging String
+     */
+    @Override
+    public String toString ()
+    {
+        String linesep = System.lineSeparator();
+        String format  = "FormMap: {%ls%s%ls%s%ls%s%ls}";
+
+        format = format.replaceAll("%ls", linesep);
+
+        String fields = "";
+        String btn    = "";
+
+        String infosFormat = "\tInfo: {nbFields=%d, unvalidatedFields=%d, button=%b}";
+        String infos       = String.format(infosFormat, this.size(), nbOfUnvalidatedFields, submitButton != null);
+
+        for (Entry<String, Field> entry : this.entrySet()) {
+            String key   = entry.getKey();
+            Field  field = entry.getValue();
+
+
+            String  className = field.getField().getClass().getSimpleName();
+            boolean validated = field.isValidated();
+            boolean required  = field.isRequired();
+            int     nbReasons = field.getInvalidationReasonList().size();
+            String  value     = field.getValue().toString();
+
+            String fieldFormat = "\tField: {key=%s, type=%s, validated=%b, required=%b, invalidationReasons=%d, value=%s}" + linesep;
+
+            fields += String.format(fieldFormat, key, className, validated, required, nbReasons, value);
+        }
+
+        if (!fields.isEmpty()) {
+            fields = fields.substring(0, fields.length() - 1);
+        }
+
+        if (submitButton != null) {
+            String btnFormat = "\tSubmit: {type=%s, disabled=%b, text=%s}";
+            btn += String.format(btnFormat, submitButton.getClass().getSimpleName(), submitButton.isDisabled(), submitButton.getText());
+        }
+
+        return String.format(format, infos, fields, btn);
+    }
+
+
+    // ------------------------------------------------------
+    // Inner class Field
+    // ------------------------------------------------------
 
     /**
      * Inner class representing a field of a form
@@ -150,7 +214,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
         private List<InvalidationReason> invalidationReasonList = new ArrayList<>();
 
         /** Default constructor */
-        public Field ()
+        Field ()
         {
         }
 
@@ -160,7 +224,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
          * @param field     the field extending {@link Control}
          * @param valueType the type of the value (e.g. Name, Date, Datetime...)
          */
-        public Field (T field, FieldValueType valueType)
+        Field (T field, FieldValueType valueType)
         {
             this();
             this.field = field;
@@ -173,34 +237,19 @@ public class FormMap extends HashMap<String, FormMap.Field>
          */
         private void reloadTooltip ()
         {
-            if (invalidationReasonList.isEmpty())
-            {
+            if (invalidationReasonList.isEmpty()) {
                 field.setTooltip(null);
             }
-            else
-            {
-                String text = "";
-                for (InvalidationReason reason : invalidationReasonList)
-                {
-                    text += System.lineSeparator();
-                    text += "- " + FormValidator.getInvalidationReasonMessageMap()
-                                                .getMessage(reason);
+            else {
+                StringBuilder text = new StringBuilder();
+                for (InvalidationReason reason : invalidationReasonList) {
+                    text.append(System.lineSeparator());
+                    text.append("- ").append(FormValidator.getInvalidationReasonMessageMap().getMessage(reason));
                 }
 
-                text = text.substring(System.lineSeparator()
-                                            .length());
-                field.setTooltip(new Tooltip(text));
+                text = new StringBuilder(text.substring(System.lineSeparator().length()));
+                field.setTooltip(new Tooltip(text.toString()));
             }
-        }
-
-        /**
-         * 1 parameter constructor
-         *
-         * @param field the field extending {@link Control}
-         */
-        public Field (T field)
-        {
-            this.field = field;
         }
 
         /**
@@ -214,16 +263,6 @@ public class FormMap extends HashMap<String, FormMap.Field>
         }
 
         /**
-         * Set the field
-         *
-         * @param field the field
-         */
-        public void setField (@NotNull T field)
-        {
-            this.field = field;
-        }
-
-        /**
          * Get the type of the value (e.g. Name, Date, Datetime...)
          *
          * @return the type of the value (e.g. Name, Date, Datetime...)
@@ -234,28 +273,16 @@ public class FormMap extends HashMap<String, FormMap.Field>
         }
 
         /**
-         * Set the type of the value (e.g. Name, Date, Datetime...)
-         *
-         * @param valueTypes the type of the value (e.g. Name, Date, Datetime...)
-         */
-        public void setValueTypes (@NotNull FieldValueType valueTypes)
-        {
-            this.valueTypes = valueTypes;
-        }
-
-        /**
          * Mark the field as validated <br>
          * If the field was previously unvalidated, the unvalidation CSS class is removed
          */
         public void validate ()
         {
-            if (!validated)
-            {
+            if (!validated) {
                 nbOfUnvalidatedFields--;
             }
 
-            field.getStyleClass()
-                 .remove(FormValidatorCssClass.INPUT_INVALID);
+            field.getStyleClass().remove(FormValidatorCssClass.INPUT_INVALID);
             validated = true;
 
 
@@ -268,13 +295,11 @@ public class FormMap extends HashMap<String, FormMap.Field>
          */
         public void unValidate ()
         {
-            if (validated)
-            {
+            if (validated) {
                 nbOfUnvalidatedFields++;
             }
 
-            field.getStyleClass()
-                 .add(FormValidatorCssClass.INPUT_INVALID);
+            field.getStyleClass().add(FormValidatorCssClass.INPUT_INVALID);
             validated = false;
             updateSubmitButtonState();
         }
@@ -284,7 +309,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
          *
          * @return true if it was validated, false otherwise
          */
-        public boolean isValidated ()
+        boolean isValidated ()
         {
             return validated;
         }
@@ -304,7 +329,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
          *
          * @param required true if required, false otherwise
          */
-        public void setRequired (boolean required)
+        void setRequired (boolean required)
         {
             this.required = required;
         }
@@ -327,8 +352,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
          */
         public void addInvalidationReason (InvalidationReason reason)
         {
-            if (!invalidationReasonList.contains(reason))
-            {
+            if (!invalidationReasonList.contains(reason)) {
                 invalidationReasonList.add(reason);
                 reloadTooltip();
             }
@@ -345,6 +369,31 @@ public class FormMap extends HashMap<String, FormMap.Field>
         {
             invalidationReasonList.remove(reason);
             reloadTooltip();
+        }
+
+        /**
+         * Get item value
+         * @return the value of the field
+         */
+        public Object getValue ()
+        {
+            if (field instanceof TextInputControl) {
+                return ((TextInputControl) field).getText();
+            }
+            else if (field instanceof HTMLEditor) {
+                return ((HTMLEditor) field).getHtmlText();
+            }
+            else if (field instanceof ToggleButton) {
+                return ((ToggleButton) field).isSelected();
+            }
+            else if (field instanceof CheckBox) {
+                return ((CheckBox) field).isSelected();
+            }
+            else if (field instanceof ComboBox) {
+                return ((ComboBox<Object>) field).getValue();
+            }
+
+            return "";
         }
     }
 }
