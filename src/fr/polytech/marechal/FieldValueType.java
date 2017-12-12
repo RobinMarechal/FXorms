@@ -3,6 +3,8 @@ package fr.polytech.marechal;
 import com.sun.istack.internal.NotNull;
 import fr.polytech.marechal.validator.FormValidator;
 
+import java.util.HashMap;
+
 /**
  * Created by Robin on 23/05/2017. <br>
  * Form.Field value type. <br>
@@ -63,5 +65,9 @@ public enum FieldValueType
     public String toString ()
     {
         return super.toString();
+    }
+
+    public void func (HashMap<String, String> map){
+
     }
 }

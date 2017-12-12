@@ -142,6 +142,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
 
     /**
      * Console debugging String
+     *
      * @return the debugging String
      */
     @Override
@@ -184,6 +185,20 @@ public class FormMap extends HashMap<String, FormMap.Field>
         }
 
         return String.format(format, infos, fields, btn);
+    }
+
+    /**
+     * Checks if the map contains a set of keys
+     * @param keys the keys that the map should contains
+     * @return true if the map contains all the keys, false otherwise
+     */
+    public boolean hasKeys (String... keys)
+    {
+        for (String key : keys) {
+            if (!this.containsKey(key)) {
+                return false;
+            }
+        }
     }
 
 
@@ -373,6 +388,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
 
         /**
          * Get item value
+         *
          * @return the value of the field
          */
         public Object getValue ()
