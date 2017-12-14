@@ -38,6 +38,7 @@ public class FormMap extends HashMap<String, FormMap.Field>
     public <T extends Control> void add (@NotNull String key, @NotNull FieldValueType valueType, @NotNull T field)
     {
         Field<T> formFieldObject = new Field<>(field, valueType);
+        formFieldObject.validated = true;
         super.put(key, formFieldObject);
 
         if (field instanceof TextInputControl) {
@@ -63,10 +64,13 @@ public class FormMap extends HashMap<String, FormMap.Field>
     public <T extends Control> void add (@NotNull String key, @NotNull FieldValueType valueType, @NotNull T field, boolean isRequired)
     {
         add(key, valueType, field);
-        get(key).setRequired(isRequired);
+        Field formFieldObject = get(key);
+        formFieldObject.setRequired(isRequired);
 
         if (isRequired) {
-            nbOfUnvalidatedFields++;
+            formFieldObject.unValidate();
+            FormValidator.validateField(formFieldObject);
+            formFieldObject.resetCss();
         }
 
         updateSubmitButtonState();
@@ -333,6 +337,12 @@ public class FormMap extends HashMap<String, FormMap.Field>
          */
         public void unValidate ()
         {
+            // If the field is finally not required and is empty, we actually validate it
+            if (!required && getValue().equals("")) {
+                validate();
+                return;
+            }
+
             if (validated) {
                 nbOfUnvalidatedFields++;
             }
@@ -433,6 +443,11 @@ public class FormMap extends HashMap<String, FormMap.Field>
             }
 
             return "";
+        }
+
+        public void resetCss ()
+        {
+            field.getStyleClass().remove(FormValidatorCssClass.INPUT_INVALID);
         }
     }
 }
