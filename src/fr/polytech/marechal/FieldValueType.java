@@ -14,7 +14,7 @@ public enum FieldValueType
 {
     FIRSTNAME("^([A-Z]?[a-z]+)(([ -][A-Z]?[a-z]+))*$"),
     LASTNAME("^([A-Z]?[a-z]+)(([ -][A-Z]?[a-z]+))*$"),
-    NAME("^.+$"),
+    NAME("^\\w[\\w\\s]*$"),
     HOURS("^[0-9]{0,2}$"),
     MINUTES("^[0-9]{0,2}$"),
     SECONDS("^[0-9]{0,2}$"),
