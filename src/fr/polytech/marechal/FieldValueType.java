@@ -24,8 +24,8 @@ public enum FieldValueType
     EMAIL("^([\\w\\.\\-_]+)?\\w+@([\\w-_]|(\\w|-|_|(\\.[\\w-_]+)))+(\\.\\w+){1,}$"),
     URL("^https?\\:\\/\\/[-a-zA-Z0-9@:%._\\+~#=]{2,256}(\\.[a-z]{2,6})?\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$"),
     PRICE("^-?\\d+(\\.\\d+)?$"),
-    TEXT("^.*$"),
-    VARCHAR("^.{0,255}$"),
+    TEXT("^[\\s\\S]*$"),
+    VARCHAR("^[\\s\\S]{0,255}$"),
     NUMBERS_INT("^-?\\d+$"),
     NUMBERS_INT_UNSIGNED("^\\d+$"),
     NUMBERS_DOUBLE("^-?\\d+(\\.\\d+)?$"),
@@ -33,8 +33,8 @@ public enum FieldValueType
     CHARACTER_LETTER("^[a-zA-Z]{1}$"),
     CHARACTER_LETTER_NUMBER("^[a-zA-Z0-9]{1}$"),
     CHARACTER_NUMBER("^\\d{1}$"),
-    CHARACTER("^.{1}$"),
-    UNDEFINED("^.*$");
+    CHARACTER("^[\\s\\S]$"),
+    UNDEFINED("^[\\s\\S]*$");
 
     /** The regexp */
     private final String regexp;
