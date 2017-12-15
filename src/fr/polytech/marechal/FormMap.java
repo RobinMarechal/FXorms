@@ -202,11 +202,13 @@ public class FormMap extends HashMap<String, FormMap.Field>
         if (submitButton != null) {
             for (Entry<String, Field> entry : entrySet()) {
                 Control control = entry.getValue().getField();
-                control.setOnKeyPressed(event -> {
-                    if (event.getCode() == KeyCode.ENTER) {
-                        submitButton.fire();
-                    }
-                });
+                if (!(control instanceof TextArea)) {
+                    control.setOnKeyPressed(event -> {
+                        if (event.getCode() == KeyCode.ENTER) {
+                            submitButton.fire();
+                        }
+                    });
+                }
             }
         }
     }
